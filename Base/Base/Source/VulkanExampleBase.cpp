@@ -9,7 +9,7 @@
 
 int main() {
     glfwInit();
-    // test
+    // test // test
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);

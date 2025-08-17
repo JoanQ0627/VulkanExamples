@@ -93,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\VulkanExamples\VulkanExamples\Base\Triangle\Head;Base\Head;..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -111,7 +111,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\VulkanExamples\VulkanExamples\Base\Triangle\Head;Base\Head;..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -127,7 +127,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\VulkanExamples\VulkanExamples\Base\Triangle\Head;Base\Head;..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -145,7 +145,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\VulkanExamples\VulkanExamples\Base\Triangle\Head;Base\Head;..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -156,10 +156,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Base\Source\Launcher.cpp" />
     <ClCompile Include="Base\Source\VulkanExampleBase.cpp" />
     <ClCompile Include="Triangle\Source\Triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Base\Head\Camera.hpp" />
     <ClInclude Include="Base\Head\VulkanExampleBase.h" />
     <ClInclude Include="Triangle\Head\Triangle.h" />
   </ItemGroup>

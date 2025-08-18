@@ -16,6 +16,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance
 {									
 	for (size_t i = 0; i < __argc; i++) { VulkanExampleBase::args.push_back(__argv[i]); };
 	vulkanExample = new Triangle();
+	vulkanExample->settings.validation = true;
 	vulkanExample->initVulkan();																	
 	vulkanExample->setupWindow(hInstance, WndProc);													
 	vulkanExample->prepare();																		

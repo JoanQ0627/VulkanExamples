@@ -1,6 +1,8 @@
 #include "VulkanExampleBase.h"
 
-// 基本上按照调用顺序来写
+// 1. 基本上按照调用顺序来写
+// 2. 非核心渲染的内容（比如检测输入，cmdline输入，profile，窗口创建等等）能看懂在干什么就行，代码直接复制粘贴
+// 3. 有***的表示是涉及核心渲染的，需要着重理解的重点函数
 //vulkanExample = new VulkanExample();
 //vulkanExample->initVulkan();
 //vulkanExample->setupWindow(hInstance, WndProc);
@@ -138,15 +140,6 @@ VulkanExampleBase::VulkanExampleBase()
 	initWaylandConnection();
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
 	initxcbConnection();
-#endif
-
-#if defined(_WIN32)
-	// Enable console if validation is active, debug message callback will output to it
-	if (this->settings.validation)
-	{
-		setupConsole("Vulkan example");
-	}
-	setupDPIAwareness();
 #endif
 }
 
@@ -439,4 +432,230 @@ void VulkanExampleBase::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 
 	OnHandleMessage(hWnd, uMsg, wParam, lParam);
 }
+
+void VulkanExampleBase::OnHandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {};
+
 #endif
+
+std::string VulkanExampleBase::getWindowTitle() const
+{
+	std::string windowTitle{ title + " - " + deviceProperties.deviceName };
+	if (!settings.overlay) {
+		windowTitle += " - " + std::to_string(frameCounter) + " fps";
+	}
+	return windowTitle;
+}
+
+void VulkanExampleBase::keyPressed(uint32_t) {} // 子类实现，除了摄像机之外的输入检测
+
+void VulkanExampleBase::mouseMoved(double x, double y, bool& handled) {} // 子类实现，自己的鼠标移动相应
+
+void VulkanExampleBase::handleMouseMove(int32_t x, int32_t y)
+{
+	int32_t dx = (int32_t)mouseState.position.x - x;
+	int32_t dy = (int32_t)mouseState.position.y - y;
+
+	bool handled = false;
+
+	if (settings.overlay) {
+		ImGuiIO& io = ImGui::GetIO();
+		handled = io.WantCaptureMouse && ui.visible;
+	}
+	mouseMoved((float)x, (float)y, handled);
+
+	if (handled) {
+		mouseState.position = glm::vec2((float)x, (float)y);
+		return;
+	}
+
+	if (mouseState.buttons.left) {
+		camera.rotate(glm::vec3(dy * camera.rotationSpeed, -dx * camera.rotationSpeed, 0.0f));
+	}
+	if (mouseState.buttons.right) {
+		camera.translate(glm::vec3(-0.0f, 0.0f, dy * .005f));
+	}
+	if (mouseState.buttons.middle) {
+		camera.translate(glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f));
+	}
+	mouseState.position = glm::vec2((float)x, (float)y);
+}
+
+void VulkanExampleBase::windowResized() {}
+
+std::string VulkanExampleBase::getShadersPath() const
+{
+	return getShaderBasePath() + shaderDir + "/";
+}
+
+// *** 窗口变化时应该做的操作
+void VulkanExampleBase::windowResize()
+{
+	if (!prepared)
+	{
+		return;
+	}
+
+	prepared = false;
+	resized = true;
+
+	// - 先等待GPU上之前的工作结束
+	vkDeviceWaitIdle(device);
+
+	// - swapchain的销毁创建
+	width = destWidth;
+	height = destHeight;
+	// 这个函数内就包含了旧的销毁，新的创建
+	createSwapChain();
+
+	// - depthStencil、frameBuffer的销毁创建
+	vkDestroyImage(device, depthStencil.image, nullptr);
+	vkDestroyImageView(device, depthStencil.view, nullptr);
+	vkFreeMemory(device, depthStencil.memory, nullptr);
+	setupDepthStencil();
+	for (auto& framebBuffer : frameBuffers)
+	{
+		vkDestroyFramebuffer(device, framebBuffer, nullptr);
+	}
+	setupFrameBuffer();
+
+
+	// - 同步原语的销毁创建
+	for (auto& semaphore : presentCompleteSemaphores)
+	{
+		vkDestroySemaphore(device, semaphore, nullptr);
+	}
+
+	for (auto& semaphore : presentCompleteSemaphores)
+	{
+		vkDestroySemaphore(device, semaphore, nullptr);
+	}
+
+	for (auto& semaphore : presentCompleteSemaphores)
+	{
+		vkDestroySemaphore(device, semaphore, nullptr);
+	}
+
+	createSynchronizationPrimitives();
+
+	// - ui resize
+	if ((width > 0.0f) && (height > 0.0f)) {
+		if (settings.overlay) {
+			ui.resize(width, height);
+		}
+	}
+
+	// - 又一次等待GPU结束，这里为什么等待，是因为要等待上面的指令执行完成吗？
+	// 但是这些都不是cmd呀，应该是同步的呀，应该立马就结束了吗？
+	// 从D老师的分析来看，这里确实是多余的，后面可以做验证，去掉之后直接更新相机应该不会有任何影响
+	// todo
+	vkDeviceWaitIdle(device);
+
+	// - 更新相机宽高比，影响投影矩阵
+
+	// 子类去做事情
+	windowResized();
+
+	resized = true;
+}
+
+// *** initVulkan
+bool VulkanExampleBase::initVulkan()
+{
+	// 这里我自己把验证层的启动放在了initvulkan里面
+	// 为了在不想输入命令行参数的时候，不给构造函数加参数，且构造函数里面有这些逻辑也不太对
+#if defined(_WIN32)
+	// - Enable console if validation is active, debug message callback will output to it
+	if (this->settings.validation)
+	{
+		setupConsole("Vulkan example");
+	}
+	setupDPIAwareness();
+#endif
+
+	// - 写入验证层log文件
+	if (commandLineParser.isSet("validationlogfile")) {
+		vks::debug::log("Sample: " + title);
+	}
+
+	// - Create the instance
+	VkResult result = createInstance();
+	if (result != VK_SUCCESS) {
+		vks::tools::exitFatal("Could not create Vulkan instance : \n" + vks::tools::errorString(result), result);
+		return false;
+	}
+
+	// - 准备一下验证层扩展
+	if (settings.validation)
+	{
+		vks::debug::setupDebugging(instance);
+	}
+
+	// - 下面是pick physicalDevice的标准流程
+	uint32_t gpuCount = 0;
+	// Get number of available physical devices
+	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
+	if (gpuCount == 0) {
+		vks::tools::exitFatal("No device with Vulkan support found", -1);
+		return false;
+	}
+	// Enumerate devices
+	std::vector<VkPhysicalDevice> physicalDevices(gpuCount);
+	result = vkEnumeratePhysicalDevices(instance, &gpuCount, physicalDevices.data());
+	if (result != VK_SUCCESS) {
+		vks::tools::exitFatal("Could not enumerate physical devices : \n" + vks::tools::errorString(result), result);
+		return false;
+	}
+
+	// cmdline没有或者没选到，就默认选第一个
+	uint32_t selectedDevice = 0;
+
+	// 通过cmdline 选出的gpu
+	if (commandLineParser.isSet("gpuselection")) {
+		uint32_t index = commandLineParser.getValueAsInt("gpuselection", 0);
+		if (index > gpuCount - 1) {
+			std::cerr << "Selected device index " << index << " is out of range, reverting to device 0 (use -listgpus to show available Vulkan devices)" << "\n";
+		}
+		else {
+			selectedDevice = index;
+		}
+	}
+	if (commandLineParser.isSet("gpulist")) {
+		std::cout << "Available Vulkan devices" << "\n";
+		for (uint32_t i = 0; i < gpuCount; i++) {
+			VkPhysicalDeviceProperties deviceProperties;
+			vkGetPhysicalDeviceProperties(physicalDevices[i], &deviceProperties);
+			std::cout << "Device [" << i << "] : " << deviceProperties.deviceName << std::endl;
+			std::cout << " Type: " << vks::tools::physicalDeviceTypeString(deviceProperties.deviceType) << "\n";
+			std::cout << " API: " << (deviceProperties.apiVersion >> 22) << "." << ((deviceProperties.apiVersion >> 12) & 0x3ff) << "." << (deviceProperties.apiVersion & 0xfff) << "\n";
+		}
+	}
+
+	physicalDevice = physicalDevices[selectedDevice];
+
+	// - 获取physicalDevice相关信息 Properties， Features， MemoryProperties
+	vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
+
+	// - 创建逻辑设备 vkDevice
+	// 子类实现，通过去deviceFeatures检查有没有想要的features
+	// 然后去改变enabledFeatures变量，然后用其去创建 device
+	getEnabledFeatures();
+
+	// 这一步还没有创建device,只是把physicalDevice传入包装类，并进行
+	// 获取physicalDevice相关信息 Properties， Features， MemoryProperties, Extension, FamilyQueue的获取并缓存
+	vulkanDevice = new vks::VulkanDevice(physicalDevice);
+
+	// 和上面的作用一致
+	getEnabledExtensions();
+
+	// 创建真正的逻辑设备
+	result = vulkanDevice->createLogicalDevice(enabledFeatures, enabledDeviceExtensions, deviceCreatepNextChain);
+	if (result != VK_SUCCESS) {
+		vks::tools::exitFatal("Could not create Vulkan device: \n" + vks::tools::errorString(result), result);
+		return false;
+	}
+	device = vulkanDevice->logicalDevice;
+
+	// todo
+}

@@ -172,6 +172,7 @@ protected: // 基类子类共有变量
 	VkPhysicalDeviceProperties deviceProperties{};
 	VkPhysicalDeviceFeatures deviceFeatures{};
 	VkPhysicalDeviceMemoryProperties deviceMemoryProperties{};
+
 	VkPhysicalDeviceFeatures enabledFeatures{};
 	std::vector<const char*> enabledDeviceExtensions;
 	std::vector<const char*> enabledInstanceExtensions;

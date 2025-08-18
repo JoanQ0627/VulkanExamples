@@ -44,14 +44,14 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -157,12 +157,36 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Base\Source\Launcher.cpp" />
+    <ClCompile Include="Base\Source\VulkanBuffer.cpp" />
+    <ClCompile Include="Base\Source\VulkanDebug.cpp" />
+    <ClCompile Include="Base\Source\VulkanDevice.cpp" />
     <ClCompile Include="Base\Source\VulkanExampleBase.cpp" />
+    <ClCompile Include="Base\Source\VulkanglTFModel.cpp" />
+    <ClCompile Include="Base\Source\VulkanSwapChain.cpp" />
+    <ClCompile Include="Base\Source\VulkanTexture.cpp" />
+    <ClCompile Include="Base\Source\VulkanTools.cpp" />
+    <ClCompile Include="Base\Source\VulkanUIOverlay.cpp" />
     <ClCompile Include="Triangle\Source\Triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Base\Head\benchmark.hpp" />
     <ClInclude Include="Base\Head\Camera.hpp" />
+    <ClInclude Include="Base\Head\CommandLineParser.hpp" />
+    <ClInclude Include="Base\Head\Entrypoints.h" />
+    <ClInclude Include="Base\Head\frustum.hpp" />
+    <ClInclude Include="Base\Head\keycodes.hpp" />
+    <ClInclude Include="Base\Head\threadpool.hpp" />
+    <ClInclude Include="Base\Head\VulkanBuffer.h" />
+    <ClInclude Include="Base\Head\VulkanDebug.h" />
+    <ClInclude Include="Base\Head\VulkanDevice.h" />
     <ClInclude Include="Base\Head\VulkanExampleBase.h" />
+    <ClInclude Include="Base\Head\VulkanFrameBuffer.hpp" />
+    <ClInclude Include="Base\Head\VulkanglTFModel.h" />
+    <ClInclude Include="Base\Head\VulkanInitializers.hpp" />
+    <ClInclude Include="Base\Head\VulkanSwapChain.h" />
+    <ClInclude Include="Base\Head\VulkanTexture.h" />
+    <ClInclude Include="Base\Head\VulkanTools.h" />
+    <ClInclude Include="Base\Head\VulkanUIOverlay.h" />
     <ClInclude Include="Triangle\Head\Triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

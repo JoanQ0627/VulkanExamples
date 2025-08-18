@@ -2,17 +2,25 @@
 #include <iostream>
 #include <stdexcept>
 
-int main() 
-{
-    Triangle app;
-
-    try {
-        app.Run();
-    }
-    catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
+#if defined(_WIN32)
+Triangle* vulkanExample;
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)						
+{																									
+	if (vulkanExample != NULL)																		
+	{																								
+		vulkanExample->handleMessages(hWnd, uMsg, wParam, lParam);
+	}																								
+	return (DefWindowProc(hWnd, uMsg, wParam, lParam));												
+}																									
+int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, _In_ LPSTR, _In_ int) 
+{									
+	for (size_t i = 0; i < __argc; i++) { VulkanExampleBase::args.push_back(__argv[i]); };
+	vulkanExample = new Triangle();
+	vulkanExample->initVulkan();																	
+	vulkanExample->setupWindow(hInstance, WndProc);													
+	vulkanExample->prepare();																		
+	vulkanExample->renderLoop();																	
+	delete(vulkanExample);																			
+	return 0;																						
 }
+#endif

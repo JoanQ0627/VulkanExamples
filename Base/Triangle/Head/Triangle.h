@@ -5,8 +5,6 @@
 class Triangle : public VulkanExampleBase
 {
 public:
-		Triangle();
-		~Triangle();
-
-		void Run();
+	Triangle();
+	~Triangle();
 };

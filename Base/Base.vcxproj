@@ -127,13 +127,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\VulkanExamples\VulkanExamples\Base\Triangle\Head;Base\Head;..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\External\glfw-3.4.bin.WIN64\lib-vc2022;..\Libs\vulkan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Libs\vulkan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -145,13 +145,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\VulkanExamples\VulkanExamples\Base\Triangle\Head;Base\Head;..\External\imgui;..\External;..\External\tinygltf;..\External\glm;..\External\ktx\other_include;..\External\ktx\include;..\External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\External\glfw-3.4.bin.WIN64\lib-vc2022;..\Libs\vulkan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Libs\vulkan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

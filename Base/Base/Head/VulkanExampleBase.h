@@ -125,7 +125,6 @@ public: // 外部函数
 #endif
 
 	virtual VkResult createInstance();
-	virtual void prepare(); // 非常重要
 	virtual void render() = 0;  // 非常重要 纯子类实现
 	virtual void setupDepthStencil();
 	virtual void setupFrameBuffer();
@@ -185,7 +184,6 @@ protected: // 基类子类共有变量
 	VkDevice device{ VK_NULL_HANDLE };
 	VkCommandPool commandPool{ VK_NULL_HANDLE };
 	VkQueue graphicsQueue{ VK_NULL_HANDLE };
-	VkQueue presentQueue{ VK_NULL_HANDLE };
 	VkFormat depthFormat{ VK_FORMAT_UNDEFINED };
 	VkRenderPass renderPass{ VK_NULL_HANDLE };
 	VulkanSwapChain swapChain;

@@ -2,11 +2,21 @@
 
 // 1. 基本上按照调用顺序来写
 // 2. 非核心渲染的内容（比如检测输入，cmdline输入，profile，窗口创建等等）能看懂在干什么就行，代码直接复制粘贴
-// 3. 有***的表示是涉及核心渲染的，需要着重理解的重点函数
+// 3. 有 *** 的表示是涉及核心渲染的，需要着重理解的重点函数
 //vulkanExample = new VulkanExample();
 //vulkanExample->initVulkan();
 //vulkanExample->setupWindow(hInstance, WndProc);
-//vulkanExample->prepare();
+//vulkanExample->prepare()
+			//createSurface();
+			//createCommandPool();
+			//createSwapChain();
+			//createCommandBuffers();
+			//createSynchronizationPrimitives();
+			//setupDepthStencil();
+			//setupRenderPass();
+			//createPipelineCache();
+			//setupFrameBuffer();
+			// UIOverlay
 //vulkanExample->renderLoop();
 //delete(vulkanExample);
 
@@ -487,7 +497,9 @@ std::string VulkanExampleBase::getShadersPath() const
 	return getShaderBasePath() + shaderDir + "/";
 }
 
-// *** 窗口变化时应该做的操作
+/// <summary>
+/// *** 窗口变化时应该做的操作
+/// </summary>
 void VulkanExampleBase::windowResize()
 {
 	if (!prepared)
@@ -525,14 +537,14 @@ void VulkanExampleBase::windowResize()
 		vkDestroySemaphore(device, semaphore, nullptr);
 	}
 
-	for (auto& semaphore : presentCompleteSemaphores)
+	for (auto& semaphore : renderCompleteSemaphores)
 	{
 		vkDestroySemaphore(device, semaphore, nullptr);
 	}
 
-	for (auto& semaphore : presentCompleteSemaphores)
+	for (auto& fence : waitFences)
 	{
-		vkDestroySemaphore(device, semaphore, nullptr);
+		vkDestroyFence(device, fence, nullptr);
 	}
 
 	createSynchronizationPrimitives();
@@ -558,7 +570,11 @@ void VulkanExampleBase::windowResize()
 	resized = true;
 }
 
-// *** initVulkan
+
+/// <summary>
+/// *** initVulkan
+/// </summary>
+/// <returns></returns>
 bool VulkanExampleBase::initVulkan()
 {
 	// 这里我自己把验证层的启动放在了initvulkan里面
@@ -656,6 +672,313 @@ bool VulkanExampleBase::initVulkan()
 		return false;
 	}
 	device = vulkanDevice->logicalDevice;
+
+	// - 查询有没有合适的深度/模板格式
+	// 这里只是查询 + 赋值
+	VkBool32 validFormat{ false };
+	if (requiresStencil)
+	{
+		validFormat = vks::tools::getSupportedDepthStencilFormat(physicalDevice, &depthFormat);
+	}
+	else
+	{
+		validFormat = vks::tools::getSupportedDepthFormat(physicalDevice, &depthFormat);
+	}
+	assert(validFormat);
+
+
+	// - swapChain包装类初始化
+	swapChain.setContext(instance, physicalDevice, device);
+
+	return true;
+}
+
+/// <summary>
+/// *** createVkInstance
+/// </summary>
+/// <returns></returns>
+VkResult VulkanExampleBase::createInstance()
+{
+	// - 先处理instance层面的extension相关
+	// instanceExtensions 这个数组是最后要传给createinfo的
+	std::vector<const char*> instanceExtensions{ VK_KHR_SURFACE_EXTENSION_NAME };
+#ifdef _WIN32
+	instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#endif
+
+	// 填充一下Instance支持的 supportedInstanceExtensions
+	uint32_t extCount = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
+	if (extCount > 0)
+	{
+		std::vector<VkExtensionProperties> extensions(extCount);
+		if (vkEnumerateInstanceExtensionProperties(nullptr, &extCount, extensions.data()) == VK_SUCCESS)
+		{
+			for (auto& ext : extensions)
+			{
+				supportedInstanceExtensions.push_back(ext.extensionName);
+			}
+		}
+	}
+
+	// 检查一下有没有哪些扩展是主动额外想要开启的，即enabledInstanceExtensions中是否有东西
+	// 这个enabledInstanceExtensions的填充时机是类的创建之后，调用InitVulkan之前
+	// 其实这里可以优化的，首先这个变量的名字就很容易误解，enabled表示已经开启的，但是实际上是外部想要开启的，能不能开启是要做检查的
+	// 其次这个数组填充时机可以再包装下
+	if (!enabledInstanceExtensions.empty())
+	{
+		for (const char* ext : enabledInstanceExtensions)
+		{
+			if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(), ext) == supportedInstanceExtensions.end())
+			{
+				std::cerr << "Enabled instance extension \"" << ext << "\" is not present at instance level\n";
+			}
+
+			// 这里明知道不支持还加进去有什么意义 ？todo
+			instanceExtensions.push_back(ext);
+		}
+	}
+
+	// - 处理验证层及EXT_debug_utils扩展
+	VkApplicationInfo appInfo{};
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appInfo.pApplicationName = name.c_str();
+	appInfo.pEngineName = name.c_str();
+	appInfo.apiVersion = apiVersion;
+
+	VkInstanceCreateInfo instanceCreateInfo{};
+	instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	instanceCreateInfo.pApplicationInfo = &appInfo;
+	// 开启验证层的条件我这里是两个, 第一个是自愿开启, 第二个是EXT扩展支持
+	bool isDebugUtilsEXTSupport = std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+		!= supportedInstanceExtensions.end();
+	if (settings.validation && isDebugUtilsEXTSupport)
+	{
+		VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI{};
+		vks::debug::setupDebugingMessengerCreateInfo(debugUtilsMessengerCI);
+		debugUtilsMessengerCI.pNext = instanceCreateInfo.pNext;
+		instanceCreateInfo.pNext = &debugUtilsMessengerCI;
+
+		instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		
+		const char* validationLayerName = "VK_LAYER_KHRONOS_validation";
+		// Check if this layer is available at instance level
+		uint32_t instanceLayerCount;
+		vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
+		std::vector<VkLayerProperties> instanceLayerProperties(instanceLayerCount);
+		vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayerProperties.data());
+		bool validationLayerPresent = false;
+		for (VkLayerProperties& layer : instanceLayerProperties) {
+			if (strcmp(layer.layerName, validationLayerName) == 0) {
+				validationLayerPresent = true;
+				break;
+			}
+		}
+		if (validationLayerPresent) {
+			instanceCreateInfo.ppEnabledLayerNames = &validationLayerName;
+			instanceCreateInfo.enabledLayerCount = 1;
+		}
+		else {
+			std::cerr << "Validation layer VK_LAYER_KHRONOS_validation not present, validation is disabled";
+		}
+	}
+
+	if (!instanceExtensions.empty())
+	{
+		instanceCreateInfo.enabledExtensionCount = (uint32_t)instanceExtensions.size();
+		instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
+	}
+
+	// - createInstance
+	VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
+
+	// - debugEXT初始化
+	if (settings.validation && isDebugUtilsEXTSupport)
+	{
+		vks::debugutils::setup(instance);
+	}
+}
+
+/// <summary>
+/// *** prepare
+/// </summary>
+void  VulkanExampleBase::prepare()
+{
+	// 基本上是严格按照顺序的,前后依赖的
+	createSurface();
+	createCommandPool();
+	createSwapChain();
+	createCommandBuffers();
+	createSynchronizationPrimitives();
+	setupDepthStencil();
+	setupRenderPass();
+	createPipelineCache();
+	setupFrameBuffer();
+
+	// 这套UI的渲染确实也需要研究一下,但不是现在
+	settings.overlay = settings.overlay && (!benchmark.active);
+	if (settings.overlay) {
+		ui.maxConcurrentFrames = c_maxConcurrentFrames;
+		ui.device = vulkanDevice;
+		ui.queue = graphicsQueue;
+		ui.shaders = {
+			loadShader(getShadersPath() + "base/uioverlay.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+			loadShader(getShadersPath() + "base/uioverlay.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT),
+		};
+		ui.prepareResources();
+		ui.preparePipeline(pipelineCache, renderPass, swapChain.colorFormat, depthFormat);
+	}
+}
+
+/// <summary>
+/// *** createSurface
+/// </summary>
+void  VulkanExampleBase::createSurface()
+{
+	// 全部交给包装类去做就好,实际里面就是一些常规流程
+	// 但是在创建过程中保留了队列 格式等信息,供以后调用查询
+#if defined(_WIN32)
+	swapChain.initSurface(windowInstance, window);
+#endif
+}
+
+/// <summary>
+/// *** createCommandPool
+/// </summary>
+void VulkanExampleBase::createCommandPool()
+{
+	VkCommandPoolCreateInfo cmdPoolInfo = vks::initializers::commandPoolCreateInfo();
+	cmdPoolInfo.queueFamilyIndex = swapChain.queueNodeIndex; // 上一步createSurface得到的
+	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &commandPool));
+}
+
+/// <summary>
+/// *** createSwapChain
+/// </summary>
+void VulkanExampleBase::createSwapChain()
+{
+	// 一样也是交给包装类去处理
+	// 这里面没有很特别的流程,就是一个swapchain的创建流程,特殊点是在于包括了oldswapchain的销毁
+	// 已经创建了swapchain 的 image 和 imageview 
+	swapChain.create(width, height, settings.vsync, settings.fullscreen);
+}
+
+/// <summary>
+/// *** createCommandBuffers
+/// </summary>
+void VulkanExampleBase::createCommandBuffers()
+{
+	// 平平无奇
+	VkCommandBufferAllocateInfo cmdBufAllocateInfo = 
+		vks::initializers::commandBufferAllocateInfo(commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(drawCmdBuffers.size()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
+}
+
+/// <summary>
+/// *** createSynchronizationPrimitives
+/// </summary>
+void VulkanExampleBase::createSynchronizationPrimitives()
+{
+	// 有个问题,为什么fence和present的个数是跟着flight数量走的
+	// 而renderComplete是跟着swapChainImageCount走的?
+	// 
+	// Wait fences to sync command buffer access
+	VkFenceCreateInfo fenceCreateInfo = vks::initializers::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+	for (auto& fence : waitFences) {
+		VK_CHECK_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &fence));
+	}
+
+	// Used to ensure that image presentation is complete before starting to submit again
+	for (auto& semaphore : presentCompleteSemaphores) {
+		VkSemaphoreCreateInfo semaphoreCI{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+		VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCI, nullptr, &semaphore));
+	}
+
+	// Semaphore used to ensure that all commands submitted have been finished before submitting the image to the queue
+	renderCompleteSemaphores.resize(swapChain.images.size());
+	for (auto& semaphore : renderCompleteSemaphores) {
+		VkSemaphoreCreateInfo semaphoreCI{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+		VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCI, nullptr, &semaphore));
+	}
+}
+
+/// <summary>
+/// *** setupDepthStencil
+/// 其实下面这套流程对于创建其他 image imageview 是基本大差不差的
+/// </summary>
+void VulkanExampleBase::setupDepthStencil()
+{
+	// - image
+	VkImageCreateInfo imageCI = vks::initializers::imageCreateInfo();
+	imageCI.imageType = VK_IMAGE_TYPE_2D;
+	imageCI.format = depthFormat;
+	imageCI.extent = { width, height, 1 }; // 这里用的为什么这个,让我想下,这个确实是会实时更新的,但是用swapchain不是更好吗?
+	imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	imageCI.mipLevels = 1;
+	imageCI.arrayLayers = 1;
+	VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &depthStencil.image));
+
+	// - allocate mem + bind mem
+	VkMemoryRequirements memRequirements{};
+	vkGetImageMemoryRequirements(device, depthStencil.image, &memRequirements);
+
+	VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
+	memAlloc.allocationSize = memRequirements.size;
+	memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &depthStencil.memory));
+	VK_CHECK_RESULT(vkBindImageMemory(device, depthStencil.image, depthStencil.memory, 0));
+
+	// - imageview
+	VkImageViewCreateInfo imageViewCI = vks::initializers::imageViewCreateInfo();
+	imageViewCI.image = depthStencil.image;
+	imageViewCI.format = depthFormat;
+	imageViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	imageViewCI.subresourceRange.levelCount = 1;
+	imageViewCI.subresourceRange.layerCount = 1;
+	imageViewCI.subresourceRange.baseMipLevel = 0;
+	imageViewCI.subresourceRange.baseArrayLayer = 0;
+	imageViewCI.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	if (requiresStencil)
+	{
+		imageViewCI.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+	}
+
+	VK_CHECK_RESULT(vkCreateImageView(device, &imageViewCI, nullptr, &depthStencil.view));
+}
+
+/// <summary>
+/// *** setupRenderPass
+/// 设置RT
+/// </summary>
+void VulkanExampleBase::setupRenderPass()
+{
+	// 一般情况下就是 color 和 depth两个RT
+	// 所以基本上都用的基类,
+	// 如果需要多的rendpass,可以在基类的prepare中,再创建自己的
+	std::array<VkAttachmentDescription, 2> attachments{};
+
+	// color
+	attachments[0].format = swapChain.colorFormat;
+	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	// depth
+	attachments[1].format = depthFormat;
+	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	// todo
 }

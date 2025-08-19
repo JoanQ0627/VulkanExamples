@@ -952,6 +952,7 @@ void VulkanExampleBase::setupDepthStencil()
 /// <summary>
 /// *** setupRenderPass
 /// 设置RT
+/// 要好好的理解这段renderpass的setup代码
 /// </summary>
 void VulkanExampleBase::setupRenderPass()
 {
@@ -960,7 +961,9 @@ void VulkanExampleBase::setupRenderPass()
 	// 如果需要多的rendpass,可以在基类的prepare中,再创建自己的
 	std::array<VkAttachmentDescription, 2> attachments{};
 
-	// color
+	// - 附件描述（VkAttachmentDescription）
+	// 附件定义了渲染流程中使用的图像资源（颜色、深度、模板）的行为和状态转换。
+	// color attachments
 	attachments[0].format = swapChain.colorFormat;
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -970,7 +973,7 @@ void VulkanExampleBase::setupRenderPass()
 	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-	// depth
+	// depth attachments
 	attachments[1].format = depthFormat;
 	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -980,5 +983,83 @@ void VulkanExampleBase::setupRenderPass()
 	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	// todo
+	// - 附件引用（VkAttachmentReference）
+	// 附件引用将附件绑定到子流程的特定位置，并指定使用时的图像布局。
+	// color attachments ref
+	VkAttachmentReference colorReference{};
+	colorReference.attachment = 0; // color attachment index
+	colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	// depth attachments ref
+	VkAttachmentReference depthReference{};
+	depthReference.attachment = 1; // depth attachment index
+	depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // 这里为什么不需要判断是不是需要stencil呢?
+
+	// - 子流程描述（VkSubpassDescription）
+	// 子流程定义了渲染操作的一个阶段，指定了如何使用附件。
+	// 没看出哪里指定了如何使用附件。。。
+	// 哦！应该就是 pColorAttachments = &colorReference  pDepthStencilAttachment = &depthReference
+	// 之前是我们自己用命名定义的color和depth，现在是人家规定的
+	// subpassDescription
+	VkSubpassDescription subpassDescription{};
+	subpassDescription.colorAttachmentCount = 1;
+	subpassDescription.pColorAttachments = &colorReference;
+	subpassDescription.pDepthStencilAttachment = &depthReference;
+	subpassDescription.inputAttachmentCount = 0;
+	subpassDescription.pInputAttachments = nullptr;
+	subpassDescription.preserveAttachmentCount = 0;
+	subpassDescription.pPreserveAttachments = nullptr;
+
+	// - 子流程依赖（VkSubpassDependency）
+	// 子流程依赖定义了不同子流程间或与外部操作间的同步关系
+	// 注意重点是子流程之间、外部操作间、 同步关系
+	// 其中srcSubpass dstSubpass就是上面的subpassDescription的索引
+	// 他指的应该是，从 srcSubpass -> dstSubpass，必须要的下面的同步关系
+	// 这里是是隐式地、由vulkan创建的mem barrier
+	// VkSubpassDependency 所进行的“同步”，本质上是在控制GPU中不同操作之间的执行顺序和内存可见性
+	// 我们把它拆解成两个核心问题：
+	// 执行依赖 : 这是通过 srcStageMask 和 dstStageMask 控制的		工位A的这批活必须全部干完，工位B才能开始干它的活。
+	// 内存依赖 : 这是通过 srcAccessMask 和 dstAccessMask 控制的	工位A干完活后，必须把产品从“工作台”（缓存）正式搬到“仓库”（主存），并通知工位B，这样工位B才能从仓库拿到最新鲜、正确的产品
+	// subpassDependencies
+	std::array<VkSubpassDependency, 2> subpassDependencies{};
+
+	// color subpass dependency
+	// depth
+	subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL; // 来自渲染流程外部 // 当 srcSubpass = VK_SUBPASS_EXTERNAL 时，它的意思是：请等待这个RenderPass之外的所有相关操作完成
+	subpassDependencies[0].dstSubpass = 0;					// 到我们的子流程
+
+	// 含义：请等待所有“早期/晚期片段测试”阶段的操作完成。
+	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+
+	// 含义：在接下来的“早期/晚期片段测试”阶段开始前，必须满足以下条件...
+	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+
+	// 条件1：确保之前所有对深度附件的“写入”操作已经完成。
+	subpassDependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	// 条件2：确保之后对深度附件的“读取和写入”操作能拿到最新的数据。
+
+	// “所有关于深度测试的活儿，都先停一停！等前面的人把他们‘写深度’的活儿彻底干完、并把成果登记入库（内存可见）之后，你们才能开始干你们‘读和写深度’的活儿。”
+	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+	subpassDependencies[0].dependencyFlags = 0;
+
+	// color
+	subpassDependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependencies[1].dstSubpass = 0;
+	subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[1].srcAccessMask = 0;
+	subpassDependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+	subpassDependencies[1].dependencyFlags = 0;
+
+	// renderPassCreateInfo
+	VkRenderPassCreateInfo renderPassCreateInfo = vks::initializers::renderPassCreateInfo();
+	renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+	renderPassCreateInfo.pAttachments = attachments.data();
+	renderPassCreateInfo.subpassCount = 1;
+	renderPassCreateInfo.pSubpasses = &subpassDescription;
+	renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
+	renderPassCreateInfo.pDependencies = subpassDependencies.data();
+
+	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass));
 }

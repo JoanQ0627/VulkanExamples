@@ -1063,3 +1063,33 @@ void VulkanExampleBase::setupRenderPass()
 
 	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass));
 }
+
+/// <summary>
+/// 无需在意
+/// </summary>
+void VulkanExampleBase::createPipelineCache()
+{
+	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = vks::initializers::pipelineCacheCreateInfo();
+	VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
+}
+
+/// <summary>
+/// *** setupFrameBuffer
+/// </summary>
+void VulkanExampleBase::setupFrameBuffer()
+{
+	frameBuffers.resize(swapChain.imageCount);
+	for (size_t i = 0; i < frameBuffers.size(); i++)
+	{
+		const VkImageView attachments[2] = {swapChain.imageViews[i], depthStencil.view};
+
+		VkFramebufferCreateInfo frameBufferCreateInfo = vks::initializers::framebufferCreateInfo();
+		frameBufferCreateInfo.attachmentCount = 2;
+		frameBufferCreateInfo.pAttachments = attachments;
+		frameBufferCreateInfo.renderPass = renderPass;
+		frameBufferCreateInfo.width = width;
+		frameBufferCreateInfo.height = height;
+		frameBufferCreateInfo.layers = 1;
+		VK_CHECK_RESULT(vkCreateFramebuffer(device, &frameBufferCreateInfo, nullptr, &frameBuffers[i]));
+	}
+}

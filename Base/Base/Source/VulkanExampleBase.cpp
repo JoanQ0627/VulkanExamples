@@ -1,5 +1,3 @@
-#include "VulkanExampleBase.h"
-
 // 1. 基本上按照调用顺序来写
 // 2. 非核心渲染的内容（比如检测输入，cmdline输入，profile，窗口创建等等）能看懂在干什么就行，代码直接复制粘贴
 // 3. 有 *** 的表示是涉及核心渲染的，需要着重理解的重点函数
@@ -18,7 +16,13 @@
 			//setupFrameBuffer();
 			// UIOverlay
 //vulkanExample->renderLoop();
+			// nextFrame -> render		
+			// prepareFrame
+			// 子类自己的（buildCommandBuffer, updateUniform）
+			// submitFrame
 //delete(vulkanExample);
+
+#include "VulkanExampleBase.h"
 
 static std::vector<const char*> args;
 
@@ -950,7 +954,7 @@ void VulkanExampleBase::setupDepthStencil()
 }
 
 /// <summary>
-/// *** setupRenderPass
+/// ******** setupRenderPass 
 /// 设置RT
 /// 要好好的理解这段renderpass的setup代码
 /// </summary>
@@ -1092,4 +1096,228 @@ void VulkanExampleBase::setupFrameBuffer()
 		frameBufferCreateInfo.layers = 1;
 		VK_CHECK_RESULT(vkCreateFramebuffer(device, &frameBufferCreateInfo, nullptr, &frameBuffers[i]));
 	}
+}
+
+/// <summary>
+/// *** renderLoop
+/// </summary>
+void VulkanExampleBase::renderLoop()
+{
+	// benchmark相关的先略过
+	destWidth = width;
+	destHeight = height;
+	lastTimestamp = std::chrono::high_resolution_clock::now();
+	tPrevEnd = lastTimestamp;
+#if defined(_WIN32)
+	MSG msg;
+	bool quitMessageReceived = false;
+	while (!quitMessageReceived) {
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+			if (msg.message == WM_QUIT) {
+				quitMessageReceived = true;
+				break;
+			}
+		}
+		if (prepared && !IsIconic(window)) {
+			nextFrame();
+		}
+	}
+#endif
+}
+
+/// <summary>
+/// *** nextFrame
+/// </summary>
+void VulkanExampleBase::nextFrame()
+{
+	// 似乎比较重要的是fps相关的处理，渲染相关的没什么
+	// 没太看懂下面的FPS计算，先跳过吧，先看渲染相关的
+
+	auto tStart = std::chrono::high_resolution_clock::now();
+	render();
+	frameCounter++;
+	auto tEnd = std::chrono::high_resolution_clock::now();
+#if (defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)) && !defined(VK_EXAMPLE_XCODE_GENERATED)
+	// SRS - Calculate tDiff as time between frames vs. rendering time for iOS/macOS displayLink-driven examples project
+	auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tPrevEnd).count();
+#else
+	auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+#endif
+	frameTimer = (float)tDiff / 1000.0f; /// 为什么这个是delta time？
+	camera.update(frameTimer);
+	// Convert to clamped timer value
+	if (!paused)
+	{
+		timer += timerSpeed * frameTimer;
+		if (timer > 1.0)
+		{
+			timer -= 1.0f;
+		}
+	}
+	float fpsTimer = (float)(std::chrono::duration<double, std::milli>(tEnd - lastTimestamp).count());
+	if (fpsTimer > 1000.0f)
+	{
+		lastFPS = static_cast<uint32_t>((float)frameCounter * (1000.0f / fpsTimer));
+#if defined(_WIN32)
+		if (!settings.overlay) {
+			std::string windowTitle = getWindowTitle();
+			SetWindowText(window, windowTitle.c_str());
+		}
+#endif
+		frameCounter = 0;
+		lastTimestamp = tEnd;
+	}
+	tPrevEnd = tEnd;
+}
+
+/// <summary>
+/// *** prepareFrame
+/// </summary>
+/// <param name="waitForFence"></param>
+void  VulkanExampleBase::prepareFrame(bool waitForFence)
+{
+	if (waitForFence) {
+		VK_CHECK_RESULT(vkWaitForFences(device, 1, &waitFences[currentBuffer], VK_TRUE, UINT64_MAX));
+		VK_CHECK_RESULT(vkResetFences(device, 1, &waitFences[currentBuffer]));
+	}
+	updateOverlay();
+	VkResult result = swapChain.acquireNextImage(presentCompleteSemaphores[currentBuffer], currentImageIndex);
+	if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) 
+	{
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) // 好奇怪的代码，看起来只是为了处理VK_ERROR_OUT_OF_DATE_KHR
+		{
+			windowResize();
+		}
+		return;
+	}
+	else 
+	{
+		VK_CHECK_RESULT(result);
+	}
+}
+
+/// <summary>
+/// *** ui相关的先不看
+/// </summary>
+void VulkanExampleBase::updateOverlay()
+{
+	if (!settings.overlay)
+		return;
+
+	ImGuiIO& io = ImGui::GetIO();
+
+	io.DisplaySize = ImVec2((float)width, (float)height);
+	io.DeltaTime = frameTimer;
+
+	io.MousePos = ImVec2(mouseState.position.x, mouseState.position.y);
+	io.MouseDown[0] = mouseState.buttons.left && ui.visible;
+	io.MouseDown[1] = mouseState.buttons.right && ui.visible;
+	io.MouseDown[2] = mouseState.buttons.middle && ui.visible;
+
+	ImGui::NewFrame();
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+	ImGui::SetNextWindowPos(ImVec2(10 * ui.scale, 10 * ui.scale));
+	ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
+	ImGui::Begin("Vulkan Example", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+	ImGui::TextUnformatted(title.c_str());
+	ImGui::TextUnformatted(deviceProperties.deviceName);
+	ImGui::Text("%.2f ms/frame (%.1d fps)", (1000.0f / lastFPS), lastFPS);
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 5.0f * ui.scale));
+#endif
+	ImGui::PushItemWidth(110.0f * ui.scale);
+	OnUpdateUIOverlay(&ui);
+	ImGui::PopItemWidth();
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+	ImGui::PopStyleVar();
+#endif
+
+	ImGui::End();
+	ImGui::PopStyleVar();
+	ImGui::Render();
+
+	ui.update(currentBuffer);
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+	if (mouseState.buttons.left) {
+		mouseState.buttons.left = false;
+	}
+#endif
+}
+
+/// <summary>
+/// *** ui相关的先不看
+/// </summary>
+void VulkanExampleBase::drawUI(const VkCommandBuffer commandBuffer)
+{
+	if (settings.overlay && ui.visible) {
+		const VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+		const VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+		ui.draw(commandBuffer, currentBuffer);
+	}
+}
+
+/// <summary>
+/// load编译好的shader
+/// 创建 shaderModule 和 shaderStageCreateInfo
+/// </summary>
+/// <param name="fileName"></param>
+/// <param name="stage"></param>
+/// <returns></returns>
+VkPipelineShaderStageCreateInfo VulkanExampleBase::loadShader(std::string fileName, VkShaderStageFlagBits stage)
+{
+	VkPipelineShaderStageCreateInfo shaderStageInfo = vks::initializers::pipelineShaderStageCreateInfo();
+	shaderStageInfo.stage = stage;
+	shaderStageInfo.module = vks::tools::loadShader(fileName.c_str(), device);
+	shaderStageInfo.pName = "main";
+	assert(shaderStageInfo.module != VK_NULL_HANDLE);
+	shaderModules.push_back(shaderStageInfo.module);
+	return shaderStageInfo;
+}
+
+/// <summary>
+/// *** submitFrame
+/// </summary>
+/// <param name="waitForFence"></param>
+void  VulkanExampleBase::submitFrame(bool skipQueueSubmit)
+{
+	if (!skipQueueSubmit)
+	{
+		VkPipelineStageFlags waitPipelineStage{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		VkSubmitInfo submitInfo = vks::initializers::submitInfo();
+		submitInfo.pWaitDstStageMask = &waitPipelineStage;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &presentCompleteSemaphores[currentBuffer];
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &renderCompleteSemaphores[currentImageIndex];
+		VK_CHECK_RESULT(vkQueueSubmit(graphicsQueue, 1, &submitInfo, waitFences[currentBuffer]));
+	}
+
+	VkPresentInfoKHR presentInfo{ .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &renderCompleteSemaphores[currentImageIndex];
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = &swapChain.swapChain;
+	presentInfo.pImageIndices = &currentImageIndex;
+	VkResult result = vkQueuePresentKHR(graphicsQueue, &presentInfo);
+	// Recreate the swapchain if it's no longer compatible with the surface (OUT_OF_DATE) or no longer optimal for presentation (SUBOPTIMAL)
+	if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) {
+		windowResize();
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			return;
+		}
+	}
+	else {
+		VK_CHECK_RESULT(result);
+	}
+	// Select the next frame to render to, based on the max. no. of concurrent frames
+	currentBuffer = (currentBuffer + 1) % c_maxConcurrentFrames;
 }

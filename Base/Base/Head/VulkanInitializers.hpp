@@ -467,6 +467,13 @@ namespace vks
 			return pipelineDepthStencilStateCreateInfo;
 		}
 
+		inline VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo()
+		{
+			VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
+		
+			return pipelineShaderStageCreateInfo;
+		}
+
 		inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo(
 			uint32_t viewportCount,
 			uint32_t scissorCount,

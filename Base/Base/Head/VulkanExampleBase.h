@@ -188,6 +188,7 @@ protected: // 基类子类共有变量
 	VkRenderPass renderPass{ VK_NULL_HANDLE };
 	VulkanSwapChain swapChain;
 	VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
+	std::vector<VkShaderModule> shaderModules;
 
 
 	// 和CPU端多个flight帧 以及 swapChain数量 相关的变量

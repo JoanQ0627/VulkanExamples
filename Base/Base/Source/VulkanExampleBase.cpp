@@ -24,7 +24,7 @@
 
 #include "VulkanExampleBase.h"
 
-static std::vector<const char*> args;
+std::vector<const char*> VulkanExampleBase::args;
 
 VulkanExampleBase::VulkanExampleBase()
 {
@@ -801,6 +801,8 @@ VkResult VulkanExampleBase::createInstance()
 	{
 		vks::debugutils::setup(instance);
 	}
+
+	return result;
 }
 
 /// <summary>
@@ -810,7 +812,7 @@ void  VulkanExampleBase::prepare()
 {
 	// 基本上是严格按照顺序的,前后依赖的
 	createSurface();
-	createCommandPool();
+	//createCommandPool(); // vulkanDevice包装类里面也有一个commandPool 后面例子也都用的vulkanDevice的commandPool 所以这个不需要了
 	createSwapChain();
 	createCommandBuffers();
 	createSynchronizationPrimitives();
@@ -818,20 +820,7 @@ void  VulkanExampleBase::prepare()
 	setupRenderPass();
 	createPipelineCache();
 	setupFrameBuffer();
-
-	// 这套UI的渲染确实也需要研究一下,但不是现在
-	settings.overlay = settings.overlay && (!benchmark.active);
-	if (settings.overlay) {
-		ui.maxConcurrentFrames = c_maxConcurrentFrames;
-		ui.device = vulkanDevice;
-		ui.queue = graphicsQueue;
-		ui.shaders = {
-			loadShader(getShadersPath() + "base/uioverlay.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-			loadShader(getShadersPath() + "base/uioverlay.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT),
-		};
-		ui.prepareResources();
-		ui.preparePipeline(pipelineCache, renderPass, swapChain.colorFormat, depthFormat);
-	}
+	prepareOverlay();
 }
 
 /// <summary>
@@ -847,15 +836,16 @@ void  VulkanExampleBase::createSurface()
 }
 
 /// <summary>
-/// *** createCommandPool
+/// *** createCommandPool vulkanDevice包装类里面也有一个commandPool所以这个不需要了
+/// 后面例子也都用的vulkanDevice的commandPool
 /// </summary>
-void VulkanExampleBase::createCommandPool()
-{
-	VkCommandPoolCreateInfo cmdPoolInfo = vks::initializers::commandPoolCreateInfo();
-	cmdPoolInfo.queueFamilyIndex = swapChain.queueNodeIndex; // 上一步createSurface得到的
-	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &commandPool));
-}
+//void VulkanExampleBase::createCommandPool()
+//{
+//	VkCommandPoolCreateInfo cmdPoolInfo = vks::initializers::commandPoolCreateInfo();
+//	cmdPoolInfo.queueFamilyIndex = swapChain.queueNodeIndex; // 上一步createSurface得到的
+//	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+//	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &commandPool)); // vulkanDevice包装类里面也有一个commandPool
+//}
 
 /// <summary>
 /// *** createSwapChain
@@ -875,7 +865,7 @@ void VulkanExampleBase::createCommandBuffers()
 {
 	// 平平无奇
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo = 
-		vks::initializers::commandBufferAllocateInfo(commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(drawCmdBuffers.size()));
+		vks::initializers::commandBufferAllocateInfo(vulkanDevice->commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(drawCmdBuffers.size()));
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
 }
 
@@ -1039,12 +1029,12 @@ void VulkanExampleBase::setupRenderPass()
 	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 
 	// 条件1：确保之前所有对深度附件的“写入”操作已经完成。
-	subpassDependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 	// 条件2：确保之后对深度附件的“读取和写入”操作能拿到最新的数据。
 
 	// “所有关于深度测试的活儿，都先停一停！等前面的人把他们‘写深度’的活儿彻底干完、并把成果登记入库（内存可见）之后，你们才能开始干你们‘读和写深度’的活儿。”
-	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+	subpassDependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 	subpassDependencies[0].dependencyFlags = 0;
 
 	// color
@@ -1095,6 +1085,26 @@ void VulkanExampleBase::setupFrameBuffer()
 		frameBufferCreateInfo.height = height;
 		frameBufferCreateInfo.layers = 1;
 		VK_CHECK_RESULT(vkCreateFramebuffer(device, &frameBufferCreateInfo, nullptr, &frameBuffers[i]));
+	}
+}
+
+/// <summary>
+/// prepareUIOverlay
+/// </summary>
+void VulkanExampleBase::prepareOverlay()
+{
+	// 这套UI的渲染确实也需要研究一下,但不是现在
+	settings.overlay = settings.overlay && (!benchmark.active);
+	if (settings.overlay) {
+		ui.maxConcurrentFrames = c_maxConcurrentFrames;
+		ui.device = vulkanDevice;
+		ui.queue = graphicsQueue;
+		ui.shaders = {
+			loadShader(getShadersPath() + "base/uioverlay.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+			loadShader(getShadersPath() + "base/uioverlay.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT),
+		};
+		ui.prepareResources();
+		ui.preparePipeline(pipelineCache, renderPass, swapChain.colorFormat, depthFormat);
 	}
 }
 
@@ -1321,3 +1331,86 @@ void  VulkanExampleBase::submitFrame(bool skipQueueSubmit)
 	// Select the next frame to render to, based on the max. no. of concurrent frames
 	currentBuffer = (currentBuffer + 1) % c_maxConcurrentFrames;
 }
+
+/// <summary>
+/// *** 基类析构
+/// </summary>
+VulkanExampleBase::~VulkanExampleBase()
+{
+	// - 销毁swapchain(imageview, swapchain, surface)
+	swapChain.cleanup();
+	
+	// - 销毁描述符池
+	if (descriptorPool != VK_NULL_HANDLE) 
+	{
+		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+	}
+
+	// - 销毁renderpass
+	if (renderPass != VK_NULL_HANDLE) 
+	{
+		vkDestroyRenderPass(device, renderPass, nullptr);
+	}
+
+	// - 销毁framebuffer
+	for (auto& framebuffer : frameBuffers) 
+	{
+		vkDestroyFramebuffer(device, framebuffer, nullptr);
+	}
+
+	// - 销毁ShaderModules
+	for (auto& shaderModule : shaderModules)
+	{
+		vkDestroyShaderModule(device, shaderModule, nullptr);
+	}
+
+	// - 销毁深度模板相关资源
+	vkDestroyImageView(device, depthStencil.view, nullptr);
+	vkDestroyImage(device, depthStencil.image, nullptr);
+	vkFreeMemory(device, depthStencil.memory, nullptr);
+
+	// - 销毁管线缓存
+	vkDestroyPipelineCache(device, pipelineCache, nullptr);
+
+	// - 销毁命令池 不再使用自己的commandPool,改用vulkanDevice的
+	//vkDestroyCommandPool(device, commandPool, nullptr);
+
+	// - 销毁同步相关资源
+	for (auto& fence : waitFences) 
+	{
+		vkDestroyFence(device, fence, nullptr);
+	}
+
+	for (auto& semaphore : presentCompleteSemaphores) 
+	{
+		vkDestroySemaphore(device, semaphore, nullptr);
+	}
+	for (auto& semaphore : renderCompleteSemaphores) 
+	{
+		vkDestroySemaphore(device, semaphore, nullptr);
+	}
+
+	// UI资源释放
+	if (settings.overlay) 
+	{
+		ui.freeResources();
+	}
+	
+	// - 销毁逻辑设备
+	delete vulkanDevice;
+
+	// - 释放DebugUtilsMessengerEXT
+	if (settings.validation)
+	{
+		vks::debug::freeDebugCallback(instance);
+	}
+
+	// - 销毁Vulkan实例
+	vkDestroyInstance(instance, nullptr);
+}
+
+
+/// 留给子类去实现
+void VulkanExampleBase::OnUpdateUIOverlay(vks::UIOverlay* overlay) {}
+void VulkanExampleBase::getEnabledFeatures() {}
+void VulkanExampleBase::getEnabledExtensions() {}

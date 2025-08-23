@@ -73,6 +73,8 @@ namespace vks
 		/** @brief Disable message boxes on fatal errors */
 		extern bool errorModeSilent;
 
+		std::string getResourcePath();
+
 		/** @brief Returns an error code as a string */
 		std::string errorString(VkResult errorCode);
 

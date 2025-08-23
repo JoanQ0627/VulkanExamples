@@ -52,10 +52,11 @@ namespace vks
 			return cmdPoolCreateInfo;
 		}
 
-		inline VkCommandBufferBeginInfo commandBufferBeginInfo()
+		inline VkCommandBufferBeginInfo commandBufferBeginInfo(VkCommandBufferUsageFlags flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
 		{
 			VkCommandBufferBeginInfo cmdBufferBeginInfo {};
 			cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			cmdBufferBeginInfo.flags = flags;
 			return cmdBufferBeginInfo;
 		}
 
@@ -389,16 +390,18 @@ namespace vks
 		}
 
 		inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo(
-			const std::vector<VkVertexInputBindingDescription> &vertexBindingDescriptions,
-			const std::vector<VkVertexInputAttributeDescription> &vertexAttributeDescriptions
+			uint32_t vertexBindingDescriptionCount,
+			const VkVertexInputBindingDescription* vertexBindingDescriptions,
+			uint32_t vertexAttributeDescriptionCount,
+			const VkVertexInputAttributeDescription* vertexAttributeDescriptions
 		)
 		{
 			VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
 			pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-			pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindingDescriptions.size());
-			pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = vertexBindingDescriptions.data();
-			pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeDescriptions.size());
-			pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = vertexAttributeDescriptions.data();
+			pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = vertexBindingDescriptionCount;
+			pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = vertexBindingDescriptions;
+			pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = vertexAttributeDescriptionCount;
+			pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = vertexAttributeDescriptions;
 			return pipelineVertexInputStateCreateInfo;
 		}
 

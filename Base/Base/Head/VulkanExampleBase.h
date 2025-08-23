@@ -137,7 +137,6 @@ public: // 外部函数
 	void windowResize();
 	void drawUI(const VkCommandBuffer commandBuffer);
 
-	void renderLoop();
 	void prepareFrame(bool waitForFence = true);
 	void submitFrame(bool skipQueueSubmit = false);
 
@@ -156,13 +155,12 @@ private: // 基类实现函数
 	void nextFrame();
 	void updateOverlay();
 	void createPipelineCache(); // todo skip
-	void createCommandPool();
+	//void createCommandPool();
 	void createSynchronizationPrimitives();
 	void createSurface();
 	void createSwapChain();
 	void createCommandBuffers();
-	void gestroyCommandBuffers();
-
+	void prepareOverlay();
 
 protected: // 基类子类共有变量
 
@@ -182,12 +180,13 @@ protected: // 基类子类共有变量
 	VkInstance instance{ VK_NULL_HANDLE };
 	VkPhysicalDevice physicalDevice{ VK_NULL_HANDLE };
 	VkDevice device{ VK_NULL_HANDLE };
-	VkCommandPool commandPool{ VK_NULL_HANDLE };
+	// VkCommandPool commandPool{ VK_NULL_HANDLE }; // vulkanDevice包装类里面也有一个commandPool 后面例子也都用的vulkanDevice的commandPool 所以这个不需要了
 	VkQueue graphicsQueue{ VK_NULL_HANDLE };
 	VkFormat depthFormat{ VK_FORMAT_UNDEFINED };
 	VkRenderPass renderPass{ VK_NULL_HANDLE };
 	VulkanSwapChain swapChain;
 	VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
+	VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
 	std::vector<VkShaderModule> shaderModules;
 
 

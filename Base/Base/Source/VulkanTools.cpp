@@ -7,6 +7,8 @@
  */
 
 #include "VulkanTools.h"
+#include <filesystem>
+#include <algorithm>
 
 #if !(defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT))
 // iOS & macOS: getAssetPath() and getShaderBasePath() implemented externally for access to Obj-C++ path utilities
@@ -44,7 +46,14 @@ namespace vks
 	namespace tools
 	{
 		bool errorModeSilent = false;
-		std::string resourcePath = "";
+		std::string resourcePath = VK_EXAMPLE_DIR;
+
+		//std::string getResourcePath()
+		//{
+		//	//std::filesystem::path slnPath = ;
+
+		//	return slnPath.generic_string();
+		//}
 
 		std::string errorString(VkResult errorCode)
 		{

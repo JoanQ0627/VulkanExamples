@@ -125,16 +125,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX20_CISO646_REMOVED_WARNING;VK_EXAMPLE_DIR="D:/VulkanExamples/VulkanExamples"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\vk_video;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Libs\vulkan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Libs\vulkan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,19 +143,30 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX20_CISO646_REMOVED_WARNING;VK_EXAMPLE_DIR="D:/VulkanExamples/VulkanExamples"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\vk_video;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\glfw-3.4.bin.WIN64\lib-vc2022;$(SolutionDir)Libs\vulkan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Libs\vulkan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\External\imgui\imgui.cpp" />
+    <ClCompile Include="..\External\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\External\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\External\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\External\ktx\lib\checkheader.c" />
+    <ClCompile Include="..\External\ktx\lib\filestream.c" />
+    <ClCompile Include="..\External\ktx\lib\hashlist.c" />
+    <ClCompile Include="..\External\ktx\lib\memstream.c" />
+    <ClCompile Include="..\External\ktx\lib\swap.c" />
+    <ClCompile Include="..\External\ktx\lib\texture.c" />
+    <ClCompile Include="..\External\ktx\lib\vkloader.c" />
     <ClCompile Include="Base\Source\Launcher.cpp" />
     <ClCompile Include="Base\Source\VulkanBuffer.cpp" />
     <ClCompile Include="Base\Source\VulkanDebug.cpp" />
@@ -188,6 +199,10 @@
     <ClInclude Include="Base\Head\VulkanTools.h" />
     <ClInclude Include="Base\Head\VulkanUIOverlay.h" />
     <ClInclude Include="Triangle\Head\Triangle.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\shaders\glsl\triangle\triangle.frag" />
+    <None Include="..\shaders\glsl\triangle\triangle.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -95,7 +95,7 @@ void Triangle::createVertexBuffer()
 	VK_CHECK_RESULT(vkBindBufferMemory(device, vertices.buffer, vertices.memory, 0));
 
 	indexBufferCI.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	VK_CHECK_RESULT(vkCreateBuffer(device, &vertexBufferCI, nullptr, &indices.buffer));
+	VK_CHECK_RESULT(vkCreateBuffer(device, &indexBufferCI, nullptr, &indices.buffer));
 	vkGetBufferMemoryRequirements(device, indices.buffer, &memReqs);
 	memAlloc.allocationSize = memReqs.size;
 	memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -218,13 +218,14 @@ void Triangle::createPipelines()
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = vks::initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 
 	// - rasterization state
-	VkPipelineRasterizationStateCreateInfo rasterizationState = vks::initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
+	VkPipelineRasterizationStateCreateInfo rasterizationState = vks::initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
 
 	// - color blend state
 	VkPipelineColorBlendAttachmentState blendAttachmentState = vks::initializers::pipelineColorBlendAttachmentState(0xf, VK_FALSE);
 	VkPipelineColorBlendStateCreateInfo colorBlendState = vks::initializers::pipelineColorBlendStateCreateInfo(1, &blendAttachmentState);
 
-	// - viewport state(dynamic)
+	// - viewport state(dynamic, 虽然是dynamic但是还是需要设置一下个数，而不能传空)
+	VkPipelineViewportStateCreateInfo viewportState = vks::initializers::pipelineViewportStateCreateInfo(1, 1, 0);
 
 	// - dynameic states
 	std::vector<VkDynamicState> dynamicStates = {
@@ -261,8 +262,10 @@ void Triangle::createPipelines()
 	pipelineCI.pMultisampleState = &multisampleState;
 	pipelineCI.pDepthStencilState = &depthStencilState;
 	pipelineCI.pVertexInputState = &vertexInputState;
+	pipelineCI.pViewportState = &viewportState;
 	pipelineCI.stageCount = 2;
 	pipelineCI.pStages = shaderStages.data();
+	pipelineCI.pDynamicState = &dynamicState;
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipeline));
 
 	// - destroy shader modules
@@ -337,12 +340,12 @@ void Triangle::buildCommandBuffers()
 	VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
 
 	VkClearValue clearValues[2];
-	clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+	clearValues[0].color = { {0.0f, 0.0f, 1.0f, 1.0f} };
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
 	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::renderPassBeginInfo();
 	renderPassBeginInfo.renderPass = renderPass;
-	renderPassBeginInfo.framebuffer = frameBuffers[currentBuffer];
+	renderPassBeginInfo.framebuffer = frameBuffers[currentImageIndex];
 	renderPassBeginInfo.renderArea.extent.width = width;
 	renderPassBeginInfo.renderArea.extent.height = height;
 	renderPassBeginInfo.clearValueCount = 2;

@@ -431,6 +431,8 @@ namespace vks
 			pipelineRasterizationStateCreateInfo.frontFace = frontFace;
 			pipelineRasterizationStateCreateInfo.flags = flags;
 			pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
+			pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
+			pipelineRasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
 			pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 			return pipelineRasterizationStateCreateInfo;
 		}
@@ -473,6 +475,7 @@ namespace vks
 		inline VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo()
 		{
 			VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
+			pipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		
 			return pipelineShaderStageCreateInfo;
 		}

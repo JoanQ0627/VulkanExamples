@@ -630,24 +630,20 @@ bool VulkanExampleBase::initVulkan()
 	uint32_t selectedDevice = 0;
 
 	// 通过cmdline 选出的gpu
-	if (commandLineParser.isSet("gpuselection")) {
-		uint32_t index = commandLineParser.getValueAsInt("gpuselection", 0);
-		if (index > gpuCount - 1) {
-			std::cerr << "Selected device index " << index << " is out of range, reverting to device 0 (use -listgpus to show available Vulkan devices)" << "\n";
-		}
-		else {
-			selectedDevice = index;
-		}
+	uint32_t index = commandLineParser.getValueAsInt("gpuselection", 0);
+	if (index > gpuCount - 1) {
+		std::cerr << "Selected device index " << index << " is out of range, reverting to device 0 (use -listgpus to show available Vulkan devices)" << "\n";
 	}
-	if (commandLineParser.isSet("gpulist")) {
-		std::cout << "Available Vulkan devices" << "\n";
-		for (uint32_t i = 0; i < gpuCount; i++) {
-			VkPhysicalDeviceProperties deviceProperties;
-			vkGetPhysicalDeviceProperties(physicalDevices[i], &deviceProperties);
-			std::cout << "Device [" << i << "] : " << deviceProperties.deviceName << std::endl;
-			std::cout << " Type: " << vks::tools::physicalDeviceTypeString(deviceProperties.deviceType) << "\n";
-			std::cout << " API: " << (deviceProperties.apiVersion >> 22) << "." << ((deviceProperties.apiVersion >> 12) & 0x3ff) << "." << (deviceProperties.apiVersion & 0xfff) << "\n";
-		}
+	else {
+		selectedDevice = index;
+	}
+	std::cout << "Available Vulkan devices" << "\n";
+	for (uint32_t i = 0; i < gpuCount; i++) {
+		VkPhysicalDeviceProperties deviceProperties;
+		vkGetPhysicalDeviceProperties(physicalDevices[i], &deviceProperties);
+		std::cout << "Device [" << i << "] : " << deviceProperties.deviceName << std::endl;
+		std::cout << " Type: " << vks::tools::physicalDeviceTypeString(deviceProperties.deviceType) << "\n";
+		std::cout << " API: " << (deviceProperties.apiVersion >> 22) << "." << ((deviceProperties.apiVersion >> 12) & 0x3ff) << "." << (deviceProperties.apiVersion & 0xfff) << "\n";
 	}
 
 	physicalDevice = physicalDevices[selectedDevice];
@@ -676,6 +672,8 @@ bool VulkanExampleBase::initVulkan()
 		return false;
 	}
 	device = vulkanDevice->logicalDevice;
+
+	vkGetDeviceQueue(device, vulkanDevice->queueFamilyIndices.graphics, 0, &graphicsQueue);
 
 	// - 查询有没有合适的深度/模板格式
 	// 这里只是查询 + 赋值
@@ -996,6 +994,7 @@ void VulkanExampleBase::setupRenderPass()
 	// 之前是我们自己用命名定义的color和depth，现在是人家规定的
 	// subpassDescription
 	VkSubpassDescription subpassDescription{};
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpassDescription.colorAttachmentCount = 1;
 	subpassDescription.pColorAttachments = &colorReference;
 	subpassDescription.pDepthStencilAttachment = &depthReference;

@@ -643,12 +643,13 @@ bool VulkanExampleBase::initVulkan()
 		vkGetPhysicalDeviceProperties(physicalDevices[i], &deviceProperties);
 		std::cout << "Device [" << i << "] : " << deviceProperties.deviceName << std::endl;
 		std::cout << " Type: " << vks::tools::physicalDeviceTypeString(deviceProperties.deviceType) << "\n";
-		std::cout << " API: " << (deviceProperties.apiVersion >> 22) << "." << ((deviceProperties.apiVersion >> 12) & 0x3ff) << "." << (deviceProperties.apiVersion & 0xfff) << "\n";
+		std::cout << " ApiVersion: " << VK_VERSION_MAJOR(deviceProperties.apiVersion) << "." << VK_VERSION_MINOR(deviceProperties.apiVersion) << "." << VK_VERSION_PATCH(deviceProperties.apiVersion) << "\n";
+		std::cout << " DriverVersion: " << VK_VERSION_MAJOR(deviceProperties.driverVersion) << "." << VK_VERSION_MINOR(deviceProperties.driverVersion) << "." << VK_VERSION_PATCH(deviceProperties.driverVersion) << "\n";
 	}
 
 	physicalDevice = physicalDevices[selectedDevice];
 
-	// - 获取physicalDevice相关信息 Properties， Features， MemoryProperties
+	// - 获取physicalDevice相关信息 Properties， Features， MemoryPropertiess
 	vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);

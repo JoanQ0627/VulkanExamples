@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Triangle\Source\Triangle.cpp">
-      <Filter>Base\Head</Filter>
-    </ClCompile>
     <ClCompile Include="Base\Source\Launcher.cpp">
       <Filter>Base\Source</Filter>
     </ClCompile>
@@ -30,9 +27,6 @@
     </ClCompile>
     <ClCompile Include="Base\Source\VulkanUIOverlay.cpp">
       <Filter>Base\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Source\VulkanExampleBase.cpp">
-      <Filter>Triangle\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\External\ktx\lib\texture.c">
       <Filter>Base\Source\Ktx</Filter>
@@ -66,6 +60,15 @@
     </ClCompile>
     <ClCompile Include="..\External\ktx\lib\vkloader.c">
       <Filter>Base\Source\Ktx</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Source\VulkanExampleBase.cpp">
+      <Filter>Base\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Triangle\Source\Triangle.cpp">
+      <Filter>Triangle\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture\Source\Texture.cpp">
+      <Filter>Texture\Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -126,6 +129,9 @@
     <ClInclude Include="Triangle\Head\Triangle.h">
       <Filter>Triangle\Head</Filter>
     </ClInclude>
+    <ClInclude Include="Texture\Head\Texture.h">
+      <Filter>Texture\Head</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Base">
@@ -155,6 +161,18 @@
     <Filter Include="Base\Source\IMGUI">
       <UniqueIdentifier>{1505abb3-8d1c-494b-a219-e93a8fb4b18e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Texture">
+      <UniqueIdentifier>{ae9f0204-a9af-4d4f-a6fc-f52cab2aba84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Texture\Head">
+      <UniqueIdentifier>{07111903-b1a4-4994-ba4b-006da5d301fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Texture\Source">
+      <UniqueIdentifier>{640eb85d-a643-4b0a-9e0e-fae604b182a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Texture\Shaders">
+      <UniqueIdentifier>{c2558de9-a138-49ea-abca-463e47d987c8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shaders\glsl\triangle\triangle.frag">
@@ -162,6 +180,12 @@
     </None>
     <None Include="..\shaders\glsl\triangle\triangle.vert">
       <Filter>Triangle\Shaders</Filter>
+    </None>
+    <None Include="..\shaders\glsl\texture\texture.frag">
+      <Filter>Texture\Shaders</Filter>
+    </None>
+    <None Include="..\shaders\glsl\texture\texture.vert">
+      <Filter>Texture\Shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

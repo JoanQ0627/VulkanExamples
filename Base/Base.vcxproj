@@ -81,11 +81,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)Build\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)Build\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)Build\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)Build\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -127,7 +127,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX20_CISO646_REMOVED_WARNING;VK_EXAMPLE_DIR="D:/VulkanExamples/VulkanExamples"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\vk_video;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Texture\Head;$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\vk_video;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -145,7 +145,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX20_CISO646_REMOVED_WARNING;VK_EXAMPLE_DIR="D:/VulkanExamples/VulkanExamples"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\vk_video;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Texture\Head;$(SolutionDir)$(ProjectName)\Triangle\Head;$(SolutionDir)$(ProjectName)\Base\Head;$(SolutionDir)External\imgui;$(SolutionDir)External;$(SolutionDir)External\tinygltf;$(SolutionDir)External\glm;$(SolutionDir)External\ktx\other_include;$(SolutionDir)External\ktx\include;$(SolutionDir)External\vk_video;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -177,6 +177,7 @@
     <ClCompile Include="Base\Source\VulkanTexture.cpp" />
     <ClCompile Include="Base\Source\VulkanTools.cpp" />
     <ClCompile Include="Base\Source\VulkanUIOverlay.cpp" />
+    <ClCompile Include="Texture\Source\Texture.cpp" />
     <ClCompile Include="Triangle\Source\Triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -198,9 +199,12 @@
     <ClInclude Include="Base\Head\VulkanTexture.h" />
     <ClInclude Include="Base\Head\VulkanTools.h" />
     <ClInclude Include="Base\Head\VulkanUIOverlay.h" />
+    <ClInclude Include="Texture\Head\Texture.h" />
     <ClInclude Include="Triangle\Head\Triangle.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\shaders\glsl\texture\texture.frag" />
+    <None Include="..\shaders\glsl\texture\texture.vert" />
     <None Include="..\shaders\glsl\triangle\triangle.frag" />
     <None Include="..\shaders\glsl\triangle\triangle.vert" />
   </ItemGroup>

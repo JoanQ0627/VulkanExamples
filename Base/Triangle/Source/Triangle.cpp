@@ -136,7 +136,7 @@ void Triangle::createDescriptorPool()
 {
 	VkDescriptorPoolSize poolSizes[1]{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
+	poolSizes[0].descriptorCount = c_maxConcurrentFrames;
 
 	VkDescriptorPoolCreateInfo descriptorPoolInfo = vks::initializers::descriptorPoolCreateInfo(1, poolSizes, c_maxConcurrentFrames);
 	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &descriptorPool));

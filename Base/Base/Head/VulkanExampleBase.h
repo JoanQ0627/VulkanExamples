@@ -83,7 +83,7 @@ public: // 公开变量
 
 	// 一些我认为比较重要的变量
 	vks::VulkanDevice* vulkanDevice{};
-	Camera camera;
+	Camera camera; // *** 据我观察 这个渲染器的世界坐标系 Y轴朝上的右手坐标系
 	VkClearColorValue defaultClearColor = { { 0.025f, 0.025f, 0.025f, 1.0f } };
 	bool prepared{ false };
 	bool resized{ false };

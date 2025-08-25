@@ -1,9 +1,11 @@
 #include "Triangle.h"
+#include "Texture.h"
 #include <iostream>
 #include <stdexcept>
 
 #if defined(_WIN32)
-Triangle* vulkanExample;
+//Triangle* vulkanExample;
+TextureExample* vulkanExample;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)						
 {																									
 	if (vulkanExample != NULL)																		
@@ -15,8 +17,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, _In_ LPSTR, _In_ int) 
 {									
 	for (size_t i = 0; i < __argc; i++) { VulkanExampleBase::args.push_back(__argv[i]); };
-	vulkanExample = new Triangle();
-	vulkanExample->settings.validation = true;
+	vulkanExample = new TextureExample();
 	vulkanExample->initVulkan();																	
 	vulkanExample->setupWindow(hInstance, WndProc);													
 	vulkanExample->prepare();																		

@@ -11,10 +11,15 @@
 
 class Triangle : public VulkanExampleBase
 {
-public:
+public:		
+	Triangle();
+	~Triangle() override;
+	void prepare() override;
+	void render() override;
+private:
 	// - 类内结构体定义
-	// （后面这些基本都会被集成在 gltfmodel 和 一些包装类如VulkanTexture, VulkanBuffer等里面）
-	struct Vertex 
+// （后面这些基本都会被集成在 gltfmodel 和 一些包装类如VulkanTexture, VulkanBuffer等里面）
+	struct Vertex
 	{
 		float position[3];
 		float color[3];
@@ -47,12 +52,6 @@ public:
 		glm::mat4 model;
 		glm::mat4 view;
 	};
-		
-	Triangle();
-	~Triangle() override;
-	void prepare() override;
-	void render() override;
-private:
 
 	std::array<UniformBuffer, c_maxConcurrentFrames> uniformBuffers;
 	VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };

@@ -46,7 +46,8 @@ namespace vks
 	namespace tools
 	{
 		bool errorModeSilent = false;
-		std::string resourcePath = VK_EXAMPLE_DIR;
+		std::string resourcePath = "";
+		//std::string resourcePath = VK_EXAMPLE_DIR;
 
 		//std::string getResourcePath()
 		//{

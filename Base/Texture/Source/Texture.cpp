@@ -1,5 +1,8 @@
 #include "Texture.h"
+#include "VulkanTools.h"
 #include <iostream>
+#include <ktx.h>
+#include <ktxVulkan.h>
 
 TextureExample::TextureExample()
 {
@@ -53,14 +56,162 @@ void TextureExample::getEnabledFeatures() // override
 void TextureExample::loadAndCreateTexture()
 {
 	// - KTX文件加载texture到CPU内存
+	std::string fileName = getAssetPath() + "textures/metalplate01_rgba.ktx";
+	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+	if (!vks::tools::fileExists)
+	{
+		vks::tools::exitFatal("Could not load texture from " + fileName, -1);
+	}
+
+	ktxTexture* ktxTexture;
+	ktxResult result = ktxTexture_CreateFromNamedFile(fileName.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
+
+	assert(result == KTX_SUCCESS);
+
+	texture.height = ktxTexture->baseHeight;
+	texture.width = ktxTexture->baseWidth;
+	texture.mipLevel = ktxTexture->numLevels;
+	ktx_uint8_t* ktxTextureData = ktxTexture_GetData(ktxTexture);	
+	ktx_size_t ktxTextureSize = ktxTexture_GetSize(ktxTexture);
 
 	// - createimage, texture mem 到 GPU mem
+	VkMemoryAllocateInfo memAllocInfo = vks::initializers::memoryAllocateInfo();
+	VkMemoryRequirements memReqs{};
 
-	// - generate mipmap (barrier)
+	vks::Buffer stagingBuffer; // 为什么例子中的stage 要和 linerTilling相关？这里需要理解一下
+
+	VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingBuffer, ktxTextureSize, ktxTextureData));
+	stagingBuffer.unmap();
+
+	VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.extent.depth = 1;
+	imageCreateInfo.extent.height = texture.height;
+	imageCreateInfo.extent.width = texture.width;
+	imageCreateInfo.format = format;
+	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageCreateInfo.mipLevels = texture.mipLevel;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	VK_CHECK_RESULT(vkCreateImage(device, &imageCreateInfo, nullptr, &texture.image));
+
+	vkGetImageMemoryRequirements(device, texture.image, &memReqs);
+	memAllocInfo.allocationSize = memReqs.size;
+	memAllocInfo.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VK_CHECK_RESULT(vkAllocateMemory(device, &memAllocInfo, nullptr, &texture.memory));
+	VK_CHECK_RESULT(vkBindImageMemory(device, texture.image, texture.memory, 0));
+
+	// - generate mipmap (barrier)  
+	// 这一段流程是非常固定的，暂时没有理解也没有关系，其实重点是在理解barrier
+	// 因为Mipmap在游戏里都是引擎生成的静态资源了，不会动态生成的，最主要的还是理解barrier
+	std::vector<VkBufferImageCopy> bufferCopyRegions;
+
+	for (uint32_t i = 0; i < texture.mipLevel; i++)
+	{
+		ktx_size_t offset;
+		KTX_error_code result = ktxTexture_GetImageOffset(ktxTexture, i, 0, 0, &offset);
+		assert(result == KTX_SUCCESS);
+
+		VkBufferImageCopy bufferCopyRegion = {};
+		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		bufferCopyRegion.imageSubresource.mipLevel = i;
+		bufferCopyRegion.imageSubresource.layerCount = 1;
+		bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+		bufferCopyRegion.imageExtent.width = std::max(1u, ktxTexture->baseWidth >> i);
+		bufferCopyRegion.imageExtent.height = std::max(1u, ktxTexture->baseHeight >> i);
+		bufferCopyRegion.imageExtent.depth = 1;
+		bufferCopyRegion.bufferOffset = offset;
+		bufferCopyRegions.push_back(bufferCopyRegion);
+	}
+
+	VkCommandBuffer copyCmd = vulkanDevice->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkImageSubresourceRange subresourceRange = {};
+	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresourceRange.baseMipLevel = 0;
+	subresourceRange.levelCount = texture.mipLevel;
+	subresourceRange.layerCount = 1;
+
+	VkImageMemoryBarrier imageMemoryBarrier = vks::initializers::imageMemoryBarrier();
+	imageMemoryBarrier.image = texture.image;
+	imageMemoryBarrier.subresourceRange = subresourceRange;
+	imageMemoryBarrier.srcAccessMask = 0;
+	imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+	vkCmdPipelineBarrier(
+		copyCmd,
+		VK_PIPELINE_STAGE_HOST_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &imageMemoryBarrier);
+
+	// 真正执行copy的地方 实际按照上面bufferCopyRegions copy mipLevel次
+	vkCmdCopyBufferToImage(
+		copyCmd,
+		stagingBuffer.buffer,
+		texture.image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		static_cast<uint32_t>(bufferCopyRegions.size()),
+		bufferCopyRegions.data());
+
+	imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	vkCmdPipelineBarrier(
+		copyCmd,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &imageMemoryBarrier); // 这个时候已经完成了image的layout转换
+
+	// 这里只是本地缓存, 到descriptor那里用的
+	texture.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	
+	// 提交命令
+	vulkanDevice->flushCommandBuffer(copyCmd, graphicsQueue, true);
+
+	// clean up staging resources
+	stagingBuffer.destroy();
+	ktxTexture_Destroy(ktxTexture);
 
 	// - create sampler
+	VkSamplerCreateInfo samplerCreateInfo = vks::initializers::samplerCreateInfo();
+	samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
+	samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.mipLodBias = 0.0f;
+	samplerCreateInfo.anisotropyEnable = enabledFeatures.samplerAnisotropy;
+	samplerCreateInfo.maxAnisotropy = enabledFeatures.samplerAnisotropy ? vulkanDevice->properties.limits.maxSamplerAnisotropy : 1.0f;
+	samplerCreateInfo.minLod = 0.0f;
+	samplerCreateInfo.maxLod = (float)texture.mipLevel;
+	samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	VK_CHECK_RESULT(vkCreateSampler(device, &samplerCreateInfo, nullptr, &texture.sampler));
 
 	// - create imageview
+	VkImageViewCreateInfo viewCreateInfo = vks::initializers::imageViewCreateInfo();
+	viewCreateInfo.image = texture.image;
+	viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewCreateInfo.format = format;
+	viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewCreateInfo.subresourceRange.baseMipLevel = 0;
+	viewCreateInfo.subresourceRange.levelCount = texture.mipLevel;
+	viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+	viewCreateInfo.subresourceRange.layerCount = 1;
+	VK_CHECK_RESULT(vkCreateImageView(device, &viewCreateInfo, nullptr, &texture.imageView));
 }
 
 void TextureExample::destroyTextureImage()
@@ -190,7 +341,7 @@ void TextureExample::createPipelines()
 	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelineLayout));
 
 	// - input assembly state
-	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = vks::initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TextureExample_LIST, 0, VK_FALSE);
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = vks::initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 
 	// - rasterization state
 	VkPipelineRasterizationStateCreateInfo rasterizationState = vks::initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);

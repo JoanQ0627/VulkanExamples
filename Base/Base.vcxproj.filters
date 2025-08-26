@@ -67,8 +67,8 @@
     <ClCompile Include="Triangle\Source\Triangle.cpp">
       <Filter>Triangle\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Texture\Source\Texture.cpp">
-      <Filter>Texture\Source</Filter>
+    <ClCompile Include="Texture\Source\TextureExample.cpp">
+      <Filter>TextureExample\Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -129,8 +129,8 @@
     <ClInclude Include="Triangle\Head\Triangle.h">
       <Filter>Triangle\Head</Filter>
     </ClInclude>
-    <ClInclude Include="Texture\Head\Texture.h">
-      <Filter>Texture\Head</Filter>
+    <ClInclude Include="Texture\Head\TextureExample.h">
+      <Filter>TextureExample\Head</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -161,16 +161,16 @@
     <Filter Include="Base\Source\IMGUI">
       <UniqueIdentifier>{1505abb3-8d1c-494b-a219-e93a8fb4b18e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Texture">
+    <Filter Include="TextureExample">
       <UniqueIdentifier>{ae9f0204-a9af-4d4f-a6fc-f52cab2aba84}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Texture\Head">
+    <Filter Include="TextureExample\Head">
       <UniqueIdentifier>{07111903-b1a4-4994-ba4b-006da5d301fc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Texture\Source">
+    <Filter Include="TextureExample\Source">
       <UniqueIdentifier>{640eb85d-a643-4b0a-9e0e-fae604b182a4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Texture\Shaders">
+    <Filter Include="TextureExample\Shaders">
       <UniqueIdentifier>{c2558de9-a138-49ea-abca-463e47d987c8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -182,10 +182,10 @@
       <Filter>Triangle\Shaders</Filter>
     </None>
     <None Include="..\shaders\glsl\texture\texture.frag">
-      <Filter>Texture\Shaders</Filter>
+      <Filter>TextureExample\Shaders</Filter>
     </None>
     <None Include="..\shaders\glsl\texture\texture.vert">
-      <Filter>Texture\Shaders</Filter>
+      <Filter>TextureExample\Shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

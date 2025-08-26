@@ -461,5 +461,12 @@ namespace vks
 			return (value + alignment - 1) & ~(alignment - 1);
 		}
 
+		void printVec4(glm::vec4 vec, std::string name)
+		{
+			std::cout << name << " : " << " ( " << vec.x << ", " << vec.y << ", " << vec.z << " )" << std::endl;
+			//std::cout << (float)vec.x  << std::endl;
+			
+		}
+
 	}
 }

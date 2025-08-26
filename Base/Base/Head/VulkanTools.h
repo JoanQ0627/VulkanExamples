@@ -10,6 +10,7 @@
 
 #include "vulkan/vulkan.h"
 #include "VulkanInitializers.hpp"
+#include "Camera.hpp"
 
 #include <math.h>
 #include <stdlib.h>
@@ -139,5 +140,7 @@ namespace vks
 
 		uint32_t alignedSize(uint32_t value, uint32_t alignment);
 		VkDeviceSize alignedVkSize(VkDeviceSize value, VkDeviceSize alignment);
+
+		void printVec4(glm::vec4, std::string);
 	}
 }

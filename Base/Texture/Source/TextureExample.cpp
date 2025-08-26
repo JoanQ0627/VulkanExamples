@@ -1,8 +1,8 @@
-#include "Texture.h"
+#include "TextureExample.h"
 #include "VulkanTools.h"
 #include <iostream>
-#include <ktx.h>
-#include <ktxVulkan.h>
+#include "ktx.h"
+#include "ktxVulkan.h"
 
 TextureExample::TextureExample()
 {
@@ -59,7 +59,7 @@ void TextureExample::loadAndCreateTexture()
 	std::string fileName = getAssetPath() + "textures/metalplate01_rgba.ktx";
 	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
-	if (!vks::tools::fileExists)
+	if (!vks::tools::fileExists(fileName))
 	{
 		vks::tools::exitFatal("Could not load texture from " + fileName, -1);
 	}
@@ -81,8 +81,8 @@ void TextureExample::loadAndCreateTexture()
 
 	vks::Buffer stagingBuffer; // 为什么例子中的stage 要和 linerTilling相关？这里需要理解一下
 
-	VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingBuffer, ktxTextureSize, ktxTextureData));
-	stagingBuffer.unmap();
+	VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		&stagingBuffer, ktxTextureSize, ktxTextureData));
 
 	VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
 	imageCreateInfo.arrayLayers = 1;
@@ -262,6 +262,11 @@ void TextureExample::createVertexBuffer()
 	VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingBuffers.indices, indices.size() * sizeof(uint32_t), indices.data()));
 
+	VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &vertexBuffer, vertices.size() * sizeof(Vertex)));
+	VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &indexBuffer, indices.size() * sizeof(uint32_t)));
+
 	// stagingbuffer --copy--> GPUbuffer
 	vulkanDevice->copyBuffer(&stagingBuffers.vertices, &vertexBuffer, graphicsQueue);
 	vulkanDevice->copyBuffer(&stagingBuffers.indices, &indexBuffer, graphicsQueue);
@@ -311,7 +316,7 @@ void TextureExample::createDescriptors()
 		std::vector<VkWriteDescriptorSet> writeDescriptorSets
 		{
 			vks::initializers::writeDescriptorSet(descriptorSets[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &uniformBuffers[i].descriptorBufferInfo),
-			vks::initializers::writeDescriptorSet(descriptorSets[i], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &textureDescriptor)
+			vks::initializers::writeDescriptorSet(descriptorSets[i], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &textureDescriptor)
 		};
 
 		vkUpdateDescriptorSets(device, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
@@ -379,8 +384,8 @@ void TextureExample::createPipelines()
 
 	// - shader stages
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{};
-	shaderStages[0] = loadShader(getShadersPath() + "Texture/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-	shaderStages[1] = loadShader(getShadersPath() + "Texture/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	shaderStages[0] = loadShader(getShadersPath() + "texture/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = loadShader(getShadersPath() + "texture/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	// - create graphics pipeline
 	VkGraphicsPipelineCreateInfo pipelineCI = vks::initializers::pipelineCreateInfo(pipelineLayout, renderPass, 0);
@@ -448,9 +453,11 @@ void TextureExample::render() // overide = 0
 void TextureExample::updateUniformBuffers()
 {
 	uniformData.projection = camera.matrices.perspective;
-	uniformData.view = camera.matrices.view;
-	uniformData.model = glm::mat4(1.0f);
+	uniformData.viewPos = camera.viewPos;
+	uniformData.modelView = camera.matrices.view;
 	memcpy(uniformBuffers[currentBuffer].mapped, &uniformData, sizeof(uniformData));
+
+	vks::tools::printVec4(camera.viewPos, "viewPos");
 }
 
 /// <summary>
@@ -466,7 +473,7 @@ void TextureExample::buildCommandBuffers()
 	VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
 
 	VkClearValue clearValues[2];
-	clearValues[0].color = { {0.0f, 0.0f, 1.0f, 1.0f} };
+	clearValues[0].color = defaultClearColor;
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
 	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::renderPassBeginInfo();

@@ -39,8 +39,8 @@ private:
 	struct UniformData
 	{
 		glm::mat4 projection;
-		glm::mat4 model;
-		glm::mat4 view;
+		glm::mat4 modelView;
+		glm::vec4 viewPos;
 		float lodBias{ .0f };
 	}uniformData;
 

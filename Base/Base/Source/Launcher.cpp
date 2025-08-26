@@ -1,5 +1,5 @@
 #include "Triangle.h"
-#include "Texture.h"
+#include "TextureExample.h"
 #include <iostream>
 #include <stdexcept>
 

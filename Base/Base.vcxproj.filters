@@ -70,6 +70,9 @@
     <ClCompile Include="Texture\Source\TextureExample.cpp">
       <Filter>TextureExample\Source</Filter>
     </ClCompile>
+    <ClCompile Include="GltfLoading\Source\GltfLoading.cpp">
+      <Filter>GltfLoading\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Base\Head\benchmark.hpp">
@@ -132,6 +135,9 @@
     <ClInclude Include="Texture\Head\TextureExample.h">
       <Filter>TextureExample\Head</Filter>
     </ClInclude>
+    <ClInclude Include="GltfLoading\Head\GltfLoading.h">
+      <Filter>GltfLoading\Head</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Base">
@@ -173,6 +179,18 @@
     <Filter Include="TextureExample\Shaders">
       <UniqueIdentifier>{c2558de9-a138-49ea-abca-463e47d987c8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="GltfLoading">
+      <UniqueIdentifier>{f671afa4-7db4-4110-ae07-d0a831357dce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GltfLoading\Head">
+      <UniqueIdentifier>{8ce50249-2a91-49c3-bfac-68c736a98836}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GltfLoading\Shaders">
+      <UniqueIdentifier>{e53386d6-a0d1-48fb-93e4-9ec5186b28eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GltfLoading\Source">
+      <UniqueIdentifier>{d8f89617-bfa2-465d-b780-a1b966b7f591}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shaders\glsl\triangle\triangle.frag">
@@ -186,6 +204,12 @@
     </None>
     <None Include="..\shaders\glsl\texture\texture.vert">
       <Filter>TextureExample\Shaders</Filter>
+    </None>
+    <None Include="..\shaders\glsl\gltfloading\mesh.frag">
+      <Filter>GltfLoading\Shaders</Filter>
+    </None>
+    <None Include="..\shaders\glsl\gltfloading\mesh.vert">
+      <Filter>GltfLoading\Shaders</Filter>
     </None>
   </ItemGroup>
 </Project>
